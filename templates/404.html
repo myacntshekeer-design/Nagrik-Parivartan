@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Not Found</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan</span>
+            </div>
+        </div>
+    </nav>
+
+    <section class="empty-state" style="min-height: 60vh; display: flex; flex-direction: column; justify-content: center;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 5rem; color: var(--primary-color); margin-bottom: 20px;"></i>
+        <h1>404 - Page Not Found</h1>
+        <p>The page you're looking for doesn't exist.</p>
+        <a href="/" class="btn btn-primary btn-large" style="margin-top: 20px;">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </section>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan.</p>
+        </div>
+    </footer>
+</body>
+</html>

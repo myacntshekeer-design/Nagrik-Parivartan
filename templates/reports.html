@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Reports - Nagrik Parivartan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Home</a></li>
+                <li><a href="/report" class="nav-link">Report Problem</a></li>
+                <li><a href="/track" class="nav-link">Track Report</a></li>
+                <li><a href="/reports" class="nav-link active">All Reports</a></li>
+                <li><a href="/stats" class="nav-link">Dashboard</a></li>
+                <li><a href="/admin/login" class="nav-link admin-link">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="reports-section">
+        <div class="reports-container">
+            <h1>Community Reports</h1>
+            <p class="reports-subtitle">View all reported issues in your area</p>
+
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="categoryFilter">Category</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="Road Damage">🚧 Road Damage</option>
+                        <option value="Streetlight">💡 Streetlight</option>
+                        <option value="Water Supply">🚰 Water Supply</option>
+                        <option value="Garbage">🗑️ Garbage</option>
+                        <option value="Drainage">🌊 Drainage</option>
+                        <option value="Other">🌳 Other</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="statusFilter">Status</label>
+                    <select id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="Pending">🟡 Pending</option>
+                        <option value="In Review">🔵 In Review</option>
+                        <option value="Resolved">🟢 Resolved</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="sortFilter">Sort By</label>
+                    <select id="sortFilter">
+                        <option value="newest">Newest First</option>
+                        <option value="urgent">Oldest Pending (Most Urgent)</option>
+                    </select>
+                </div>
+
+                <button id="resetBtn" class="btn btn-secondary">Reset Filters</button>
+            </div>
+
+            <!-- Reports Count -->
+            <div class="reports-count">
+                <p>Found <strong id="reportCount">0</strong> report(s)</p>
+            </div>
+
+            <!-- Reports Grid -->
+            <div id="reportsGrid" class="reports-grid">
+                <!-- Reports will be loaded here -->
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Loading reports...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No reports found</h3>
+                <p>Try adjusting your filters or be the first to report an issue!</p>
+                <a href="/report" class="btn btn-primary">Report a Problem</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan. Making communities better, one report at a time.</p>
+        </div>
+    </footer>
+
+    <script>
+        const categoryFilter = document.getElementById('categoryFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const sortFilter = document.getElementById('sortFilter');
+        const resetBtn = document.getElementById('resetBtn');
+        const reportsGrid = document.getElementById('reportsGrid');
+        const reportCount = document.getElementById('reportCount');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+
+        async function loadReports() {
+            loadingState.style.display = 'flex';
+            emptyState.style.display = 'none';
+            reportsGrid.innerHTML = '';
+
+            const category = categoryFilter.value;
+            const status = statusFilter.value;
+            const sort = sortFilter.value;
+
+            const params = new URLSearchParams();
+            if (category) params.append('category', category);
+            if (status) params.append('status', status);
+            params.append('sort', sort);
+
+            try {
+                const response = await fetch(`/api/get-all-reports?${params}`);
+                const data = await response.json();
+
+                if (data.success && data.data.length > 0) {
+                    reportCount.textContent = data.count;
+                    displayReports(data.data);
+                } else {
+                    reportCount.textContent = 0;
+                    emptyState.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                emptyState.style.display = 'flex';
+            } finally {
+                loadingState.style.display = 'none';
+            }
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'Pending': '🟡',
+                'In Review': '🔵',
+                'Resolved': '🟢'
+            };
+            return icons[status] || '⚪';
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'Road Damage': '🚧',
+                'Streetlight': '💡',
+                'Water Supply': '🚰',
+                'Garbage': '🗑️',
+                'Drainage': '🌊',
+                'Other': '🌳'
+            };
+            return icons[category] || '📍';
+        }
+
+        function displayReports(reports) {
+            reportsGrid.innerHTML = '';
+
+            reports.forEach(report => {
+                const reportCard = document.createElement('div');
+                reportCard.className = 'report-item';
+                reportCard.innerHTML = `
+                    <div class="report-item-header">
+                        <h3>${report.title}</h3>
+                        <span class="status-badge status-${report.status.toLowerCase().replace(' ', '-')}">
+                            ${getStatusIcon(report.status)} ${report.status}
+                        </span>
+                    </div>
+                    
+                    <div class="report-item-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-list"></i> ${getCategoryIcon(report.category)} ${report.category}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-map-marker-alt"></i> ${report.location}
+                        </span>
+                    </div>
+
+                    <p class="report-item-description">${report.description.substring(0, 150)}...</p>
+
+                    <div class="report-item-footer">
+                        <small class="report-id"><i class="fas fa-hashtag"></i> ${report.report_id}</small>
+                        <small class="report-date">${new Date(report.created_at).toLocaleDateString()}</small>
+                    </div>
+
+                    ${report.photo_filename ? `
+                        <div class="report-item-photo">
+                            <img src="/uploads/${report.photo_filename}" alt="Report photo">
+                        </div>
+                    ` : ''}
+
+                    ${report.admin_response ? `
+                        <div class="report-item-response">
+                            <i class="fas fa-comment-dots"></i>
+                            <p>${report.admin_response.substring(0, 100)}...</p>
+                        </div>
+                    ` : ''}
+                `;
+                reportsGrid.appendChild(reportCard);
+            });
+        }
+
+        // Event listeners
+        categoryFilter.addEventListener('change', loadReports);
+        statusFilter.addEventListener('change', loadReports);
+        sortFilter.addEventListener('change', loadReports);
+        resetBtn.addEventListener('click', () => {
+            categoryFilter.value = '';
+            statusFilter.value = '';
+            sortFilter.value = 'newest';
+            loadReports();
+        });
+
+        // Load reports on page load
+        loadReports();
+    </script>
+</body>
+</html>

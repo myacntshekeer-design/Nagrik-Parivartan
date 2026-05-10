@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Nagrik Parivartan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="admin-page">
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan - Admin Panel</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Public Site</a></li>
+                <li><a href="/admin/logout" class="nav-link logout-link">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="admin-section">
+        <div class="admin-container">
+            <h1>Admin Dashboard</h1>
+            <p class="admin-subtitle">Manage and respond to community reports</p>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Loading reports...</p>
+            </div>
+
+            <!-- Reports Table -->
+            <div id="tableContainer" class="table-container" style="display: none;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Report ID</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <!-- Reports will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <i class="fas fa-inbox"></i>
+                <h3>No reports yet</h3>
+                <p>Great! All issues in the neighborhood have been resolved!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Report Detail Modal -->
+    <div id="reportModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Report Details</h2>
+                <button type="button" class="modal-close" id="closeModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Report Info -->
+                <div class="modal-section">
+                    <h3 id="modalTitle"></h3>
+                    <div class="modal-info-grid">
+                        <div class="info-item">
+                            <label>Report ID</label>
+                            <p id="modalReportId"></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Reporter</label>
+                            <p id="modalReporter"></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Email</label>
+                            <p id="modalEmail"></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Category</label>
+                            <p id="modalCategory"></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Location</label>
+                            <p id="modalLocation"></p>
+                        </div>
+                        <div class="info-item">
+                            <label>Date Submitted</label>
+                            <p id="modalDate"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="modal-section">
+                    <h4>Description</h4>
+                    <p id="modalDescription"></p>
+                </div>
+
+                <!-- Photo -->
+                <div id="modalPhotoSection" class="modal-section" style="display: none;">
+                    <h4>Evidence Photo</h4>
+                    <img id="modalPhoto" src="" alt="Report photo" class="modal-photo">
+                </div>
+
+                <!-- Status & Response Form -->
+                <div class="modal-section">
+                    <h4>Update Status & Response</h4>
+                    
+                    <div class="form-group">
+                        <label for="statusSelect">
+                            <i class="fas fa-tasks"></i> Status
+                        </label>
+                        <select id="statusSelect" class="modal-input">
+                            <option value="Pending">🟡 Pending</option>
+                            <option value="In Review">🔵 In Review</option>
+                            <option value="Resolved">🟢 Resolved</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="responseText">
+                            <i class="fas fa-comment-dots"></i> Official Response
+                        </label>
+                        <textarea 
+                            id="responseText" 
+                            class="modal-input"
+                            placeholder="Add your official response to the reporter..."
+                            rows="5"
+                        ></textarea>
+                        <small>This message will be visible to the reporter</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="deleteBtn" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Delete Report
+                </button>
+                <button type="button" id="saveBtn" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+                <button type="button" id="cancelBtn" class="btn btn-secondary">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan Admin Panel.</p>
+        </div>
+    </footer>
+
+    <script>
+        let currentReport = null;
+        const modal = document.getElementById('reportModal');
+        const closeBtn = document.getElementById('closeModal');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const deleteBtn = document.getElementById('deleteBtn');
+
+        async function loadReports() {
+            const loadingState = document.getElementById('loadingState');
+            const tableContainer = document.getElementById('tableContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            loadingState.style.display = 'flex';
+            tableContainer.style.display = 'none';
+            emptyState.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/admin/get-all-reports');
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.data.length > 0) {
+                        displayReports(data.data);
+                        tableContainer.style.display = 'block';
+                    } else {
+                        emptyState.style.display = 'flex';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                emptyState.style.display = 'flex';
+            } finally {
+                loadingState.style.display = 'none';
+            }
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'Pending': '🟡',
+                'In Review': '🔵',
+                'Resolved': '🟢'
+            };
+            return icons[status] || '⚪';
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'Road Damage': '🚧',
+                'Streetlight': '💡',
+                'Water Supply': '🚰',
+                'Garbage': '🗑️',
+                'Drainage': '🌊',
+                'Other': '🌳'
+            };
+            return icons[category] || '📍';
+        }
+
+        function displayReports(reports) {
+            const tbody = document.getElementById('reportsTableBody');
+            tbody.innerHTML = '';
+
+            reports.forEach(report => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${report.report_id}</td>
+                    <td>${report.title}</td>
+                    <td>${getCategoryIcon(report.category)} ${report.category}</td>
+                    <td>${report.location}</td>
+                    <td>
+                        <span class="status-badge status-${report.status.toLowerCase().replace(' ', '-')}">
+                            ${getStatusIcon(report.status)} ${report.status}
+                        </span>
+                    </td>
+                    <td>${new Date(report.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn-action" onclick="openReportModal(${report.id})">
+                            <i class="fas fa-edit"></i> View & Edit
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function openReportModal(reportId) {
+            // Find the report
+            const reportRow = event.target.closest('tr');
+            const cells = reportRow.querySelectorAll('td');
+            
+            // For now, we'll fetch the full report data
+            fetch(`/api/admin/get-all-reports`)
+                .then(r => r.json())
+                .then(data => {
+                    const report = data.data.find(r => r.id === reportId);
+                    if (report) {
+                        displayReportInModal(report);
+                        modal.style.display = 'flex';
+                    }
+                });
+        }
+
+        function displayReportInModal(report) {
+            currentReport = report;
+
+            document.getElementById('modalTitle').textContent = report.title;
+            document.getElementById('modalReportId').textContent = report.report_id;
+            document.getElementById('modalReporter').textContent = report.reporter_name;
+            document.getElementById('modalEmail').textContent = report.reporter_email || 'Not provided';
+            document.getElementById('modalCategory').textContent = getCategoryIcon(report.category) + ' ' + report.category;
+            document.getElementById('modalLocation').textContent = report.location;
+            document.getElementById('modalDate').textContent = new Date(report.created_at).toLocaleString();
+            document.getElementById('modalDescription').textContent = report.description;
+
+            document.getElementById('statusSelect').value = report.status;
+            document.getElementById('responseText').value = report.admin_response || '';
+
+            if (report.photo_filename) {
+                document.getElementById('modalPhoto').src = `/uploads/${report.photo_filename}`;
+                document.getElementById('modalPhotoSection').style.display = 'block';
+            } else {
+                document.getElementById('modalPhotoSection').style.display = 'none';
+            }
+        }
+
+        async function saveChanges() {
+            if (!currentReport) return;
+
+            const status = document.getElementById('statusSelect').value;
+            const response = document.getElementById('responseText').value;
+
+            try {
+                const result = await fetch(`/api/admin/update-report/${currentReport.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        admin_response: response
+                    })
+                });
+
+                const data = await result.json();
+
+                if (data.success) {
+                    alert('Report updated successfully!');
+                    closeModal();
+                    loadReports();
+                } else {
+                    alert('Error updating report: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error updating report: ' + error.message);
+            }
+        }
+
+        async function deleteReport() {
+            if (!currentReport) return;
+
+            if (!confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const result = await fetch(`/api/admin/delete-report/${currentReport.id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await result.json();
+
+                if (data.success) {
+                    alert('Report deleted successfully!');
+                    closeModal();
+                    loadReports();
+                } else {
+                    alert('Error deleting report: ' + data.message);
+                }
+            } catch (error) {
+                alert('Error deleting report: ' + error.message);
+            }
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            currentReport = null;
+        }
+
+        // Event listeners
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        saveBtn.addEventListener('click', saveChanges);
+        deleteBtn.addEventListener('click', deleteReport);
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Load reports on page load
+        loadReports();
+
+        // Refresh every 60 seconds
+        setInterval(loadReports, 60000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Your Report - Nagrik Parivartan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Home</a></li>
+                <li><a href="/report" class="nav-link">Report Problem</a></li>
+                <li><a href="/track" class="nav-link active">Track Report</a></li>
+                <li><a href="/reports" class="nav-link">All Reports</a></li>
+                <li><a href="/stats" class="nav-link">Dashboard</a></li>
+                <li><a href="/admin/login" class="nav-link admin-link">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="track-section">
+        <div class="track-container">
+            <h1>Track Your Report</h1>
+            <p class="track-subtitle">Enter your Report ID to check the status</p>
+
+            <!-- Search Box -->
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input 
+                        type="text" 
+                        id="reportId" 
+                        placeholder="e.g., RPT-1234"
+                        autocomplete="off"
+                    >
+                    <button id="searchBtn" class="btn btn-primary">Search</button>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="alert alert-error" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <p id="errorText"></p>
+            </div>
+
+            <!-- Report Details -->
+            <div id="reportDetails" class="report-card" style="display: none;">
+                <div class="report-header">
+                    <h2 id="reportTitle"></h2>
+                    <span id="statusBadge" class="status-badge"></span>
+                </div>
+
+                <!-- Status Timeline -->
+                <div class="status-timeline">
+                    <div class="timeline-item pending">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <h3>Submitted</h3>
+                            <p id="submittedDate"></p>
+                        </div>
+                    </div>
+                    <div class="timeline-item in-review">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <h3>In Review</h3>
+                            <p>Officials are reviewing your report</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item resolved">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <h3>Resolved</h3>
+                            <p id="resolvedDate"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Details -->
+                <div class="report-details-grid">
+                    <div class="detail-item">
+                        <label>Report ID</label>
+                        <p id="reportIdDisplay"></p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Category</label>
+                        <p id="reportCategory"></p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Location</label>
+                        <p id="reportLocation"></p>
+                    </div>
+                    <div class="detail-item">
+                        <label>Reporter</label>
+                        <p id="reporterName"></p>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="detail-section">
+                    <h3>Description</h3>
+                    <p id="reportDescription"></p>
+                </div>
+
+                <!-- Photo -->
+                <div id="photoSection" class="detail-section" style="display: none;">
+                    <h3>Evidence Photo</h3>
+                    <img id="reportPhoto" src="" alt="Report photo" class="report-photo">
+                </div>
+
+                <!-- Admin Response -->
+                <div id="responseSection" class="detail-section admin-response" style="display: none;">
+                    <h3>
+                        <i class="fas fa-comment-dots"></i> Official Response
+                    </h3>
+                    <div class="response-box">
+                        <p id="adminResponse"></p>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button id="newSearchBtn" class="btn btn-secondary">Search Another Report</button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Searching for your report...</p>
+            </div>
+
+            <!-- Tips -->
+            <div class="tips-section">
+                <h3>Tips:</h3>
+                <ul>
+                    <li>Your Report ID was provided when you submitted the report</li>
+                    <li>Report IDs look like: <strong>RPT-1234</strong></li>
+                    <li>Check back regularly for updates on your report status</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan. Making communities better, one report at a time.</p>
+        </div>
+    </footer>
+
+    <script>
+        const reportIdInput = document.getElementById('reportId');
+        const searchBtn = document.getElementById('searchBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const reportDetails = document.getElementById('reportDetails');
+        const loadingState = document.getElementById('loadingState');
+        const newSearchBtn = document.getElementById('newSearchBtn');
+
+        function getStatusIcon(status) {
+            const icons = {
+                'Pending': '🟡',
+                'In Review': '🔵',
+                'Resolved': '🟢'
+            };
+            return icons[status] || '⚪';
+        }
+
+        async function searchReport() {
+            const reportId = reportIdInput.value.trim().toUpperCase();
+
+            if (!reportId) {
+                showError('Please enter a Report ID');
+                return;
+            }
+
+            if (!reportId.startsWith('RPT-')) {
+                showError('Report ID should start with RPT-');
+                return;
+            }
+
+            loadingState.style.display = 'flex';
+            errorMessage.style.display = 'none';
+            reportDetails.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/get-report/${reportId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    displayReport(data.data);
+                } else {
+                    showError('Report not found. Please check your Report ID and try again.');
+                }
+            } catch (error) {
+                showError('An error occurred. Please try again.');
+                console.error(error);
+            } finally {
+                loadingState.style.display = 'none';
+            }
+        }
+
+        function displayReport(report) {
+            // Set basic info
+            document.getElementById('reportTitle').textContent = report.title;
+            document.getElementById('reportIdDisplay').textContent = report.report_id;
+            document.getElementById('reportCategory').textContent = report.category;
+            document.getElementById('reportLocation').textContent = report.location;
+            document.getElementById('reporterName').textContent = report.reporter_name;
+            document.getElementById('reportDescription').textContent = report.description;
+            document.getElementById('submittedDate').textContent = report.created_at;
+
+            // Status badge
+            const statusBadge = document.getElementById('statusBadge');
+            statusBadge.textContent = `${getStatusIcon(report.status)} ${report.status}`;
+            statusBadge.className = `status-badge status-${report.status.toLowerCase().replace(' ', '-')}`;
+
+            // Update timeline
+            updateTimeline(report.status, report.updated_at);
+
+            // Photo
+            if (report.photo_filename) {
+                document.getElementById('reportPhoto').src = `/uploads/${report.photo_filename}`;
+                document.getElementById('photoSection').style.display = 'block';
+            }
+
+            // Admin response
+            if (report.admin_response) {
+                document.getElementById('adminResponse').textContent = report.admin_response;
+                document.getElementById('responseSection').style.display = 'block';
+            }
+
+            reportDetails.style.display = 'block';
+            errorMessage.style.display = 'none';
+            window.scrollTo({ top: reportDetails, behavior: 'smooth' });
+        }
+
+        function updateTimeline(status, updatedDate) {
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            
+            timelineItems.forEach(item => {
+                item.classList.remove('active', 'completed');
+            });
+
+            if (status === 'Pending') {
+                timelineItems[0].classList.add('active');
+            } else if (status === 'In Review') {
+                timelineItems[0].classList.add('completed');
+                timelineItems[1].classList.add('active');
+            } else if (status === 'Resolved') {
+                timelineItems[0].classList.add('completed');
+                timelineItems[1].classList.add('completed');
+                timelineItems[2].classList.add('active', 'completed');
+                document.getElementById('resolvedDate').textContent = updatedDate;
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('errorText').textContent = message;
+            errorMessage.style.display = 'flex';
+            reportDetails.style.display = 'none';
+            loadingState.style.display = 'none';
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', searchReport);
+        reportIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchReport();
+        });
+
+        newSearchBtn.addEventListener('click', () => {
+            reportIdInput.value = '';
+            reportDetails.style.display = 'none';
+            errorMessage.style.display = 'none';
+            reportIdInput.focus();
+        });
+    </script>
+</body>
+</html>

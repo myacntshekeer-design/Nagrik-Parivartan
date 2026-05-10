@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report a Problem - Nagrik Parivartan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<!-- Leaflet Map CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+<!-- Leaflet Map JS -->
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Home</a></li>
+                <li><a href="/report" class="nav-link active">Report Problem</a></li>
+                <li><a href="/track" class="nav-link">Track Report</a></li>
+                <li><a href="/reports" class="nav-link">All Reports</a></li>
+                <li><a href="/stats" class="nav-link">Dashboard</a></li>
+                <li><a href="/admin/login" class="nav-link admin-link">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="form-section">
+        <div class="form-container">
+            <h1>Report a Problem</h1>
+            <p class="form-subtitle">Help us make your neighborhood better</p>
+
+            <form id="reportForm" class="report-form">
+                <!-- Title -->
+                <div class="form-group">
+                    <label for="title">
+                        <i class="fas fa-heading"></i> Problem Title *
+                    </label>
+                    <input 
+                        type="text" 
+                        id="title" 
+                        name="title" 
+                        placeholder="e.g., Pothole on Main Street"
+                        required
+                        minlength="5"
+                    >
+                    <small>At least 5 characters</small>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description">
+                        <i class="fas fa-align-left"></i> Description *
+                    </label>
+                    <textarea 
+                        id="description" 
+                        name="description" 
+                        placeholder="Describe the problem in detail..."
+                        required
+                        minlength="10"
+                        rows="5"
+                    ></textarea>
+                    <small>At least 10 characters</small>
+                </div>
+
+                <!-- Category -->
+                <div class="form-group">
+                    <label for="category">
+                        <i class="fas fa-list"></i> Category *
+                    </label>
+                    <select id="category" name="category" required>
+                        <option value="">-- Select a Category --</option>
+                        <option value="Road Damage">🚧 Road Damage</option>
+                        <option value="Streetlight">💡 Streetlight</option>
+                        <option value="Water Supply">🚰 Water Supply</option>
+                        <option value="Garbage">🗑️ Garbage</option>
+                        <option value="Drainage">🌊 Drainage</option>
+                        <option value="Other">🌳 Other</option>
+                    </select>
+                </div>
+
+                <!-- Location Section -->
+<div class="form-group">
+    <label for="location">
+        <i class="fas fa-map-marker-alt"></i> Location *
+    </label>
+    <input 
+        type="text" 
+        id="location" 
+        name="location" 
+        placeholder="e.g., Near Plaza, Sector 5"
+        required
+    >
+</div>
+
+<!-- Map Section -->
+<div class="form-group">
+    <label for="map">
+        <i class="fas fa-map"></i> Select Location on Map
+    </label>
+    <div id="map" style="width: 100%; height: 400px; border-radius: 12px; border: 2px solid #E0E0E0; margin-bottom: 16px;"></div>
+    <small>Click on the map to mark the exact location of the problem</small>
+    <p id="mapCoords" style="color: #c57d63; font-weight: 600; margin-top: 10px;"></p>
+</div>
+
+                <!-- Photo Upload -->
+                <div class="form-group">
+                    <label for="photo">
+                        <i class="fas fa-image"></i> Photo (Optional)
+                    </label>
+                    <div class="file-upload-wrapper">
+                        <input 
+                            type="file" 
+                            id="photo" 
+                            name="photo" 
+                            accept="image/*"
+                        >
+                        <div class="file-upload-box">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag photo here or click to upload</p>
+                            <small>PNG, JPG, GIF (Max 16MB)</small>
+                        </div>
+                        <div id="photoPreview" class="photo-preview" style="display: none;">
+                            <img id="previewImage" src="" alt="Preview">
+                            <button type="button" class="btn-remove" id="removePhoto">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="reporter_name">
+                            <i class="fas fa-user"></i> Your Name (Optional)
+                        </label>
+                        <input 
+                            type="text" 
+                            id="reporter_name" 
+                            name="reporter_name" 
+                            placeholder="Leave blank to stay anonymous"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reporter_email">
+                            <i class="fas fa-envelope"></i> Your Email (Optional)
+                        </label>
+                        <input 
+                            type="email" 
+                            id="reporter_email" 
+                            name="reporter_email" 
+                            placeholder="For updates (optional)"
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary btn-large">
+                    <i class="fas fa-paper-plane"></i> Submit Report
+                </button>
+            </form>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="alert alert-success" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <div>
+                    <h3>Report Submitted Successfully!</h3>
+                    <p>Your Report ID: <strong id="reportId"></strong></p>
+                    <p>Use this ID to track your report status.</p>
+                    <a href="/track" class="btn btn-secondary">Track Your Report</a>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="alert alert-error" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    <h3>Error Submitting Report</h3>
+                    <p id="errorText"></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan. Making communities better, one report at a time.</p>
+        </div>
+    </footer>
+
+    <script>
+        const form = document.getElementById('reportForm');
+        const photoInput = document.getElementById('photo');
+        const photoPreview = document.getElementById('photoPreview');
+        const previewImage = document.getElementById('previewImage');
+        const removePhotoBtn = document.getElementById('removePhoto');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const fileUploadBox = document.querySelector('.file-upload-box');
+
+        // Photo preview handling
+        photoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    previewImage.src = event.target.result;
+                    photoPreview.style.display = 'block';
+                    fileUploadBox.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        removePhotoBtn.addEventListener('click', () => {
+            photoInput.value = '';
+            photoPreview.style.display = 'none';
+            fileUploadBox.style.display = 'flex';
+        });
+
+        // Drag and drop
+        const dropZone = document.querySelector('.file-upload-wrapper');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                photoInput.files = files;
+                const event = new Event('change', { bubbles: true });
+                photoInput.dispatchEvent(event);
+            }
+        });
+
+        // Wait for Leaflet library to load
+        let mapReady = false;
+
+        // Check if Leaflet is loaded
+        function waitForLeaflet() {
+            if (typeof L !== 'undefined') {
+                console.log('Leaflet loaded successfully');
+                initializeMap();
+            } else {
+                console.log('Waiting for Leaflet...');
+                setTimeout(waitForLeaflet, 100);
+            }
+        }
+
+        // Initialize the map
+        function initializeMap() {
+            try {
+                console.log('Initializing map...');
+
+                // Create map
+                const map = L.map('map').setView([12.9716, 77.5946], 13);
+
+                // Add tiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                console.log('Map initialized successfully');
+
+                let marker = null;
+
+                // Handle clicks on map
+                map.on('click', function(e) {
+                    console.log('Clicked:', e.latlng);
+
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+
+                    // Remove old marker
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
+
+                    // Add new marker
+                    marker = L.marker([lat, lng]).addTo(map);
+                    marker.bindPopup('Lat: ' + lat.toFixed(4) + ' Lng: ' + lng.toFixed(4)).openPopup();
+
+                    // Show coordinates
+                    document.getElementById('mapCoords').innerHTML = 
+                        '<strong>Location selected:</strong> Latitude: ' + lat.toFixed(4) + ', Longitude: ' + lng.toFixed(4);
+                });
+
+            } catch (error) {
+                console.error('Map error:', error);
+            }
+        }
+
+        // Start when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', waitForLeaflet);
+        } else {
+            waitForLeaflet();
+        }       
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/api/submit-report', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    successMessage.style.display = 'flex';
+                    document.getElementById('reportId').textContent = data.report_id;
+                    form.reset();
+                    photoPreview.style.display = 'none';
+                    fileUploadBox.style.display = 'flex';
+                    errorMessage.style.display = 'none';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    errorMessage.style.display = 'flex';
+                    document.getElementById('errorText').textContent = data.message;
+                    successMessage.style.display = 'none';
+                }
+            } catch (error) {
+                errorMessage.style.display = 'flex';
+                document.getElementById('errorText').textContent = 'An error occurred. Please try again.';
+                successMessage.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

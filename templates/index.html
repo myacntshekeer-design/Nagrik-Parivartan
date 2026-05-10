@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nagrik Parivartan - Your Concerns, Straight to Government</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link active">Home</a></li>
+                <li><a href="/report" class="nav-link">Report Problem</a></li>
+                <li><a href="/track" class="nav-link">Track Report</a></li>
+                <li><a href="/reports" class="nav-link">All Reports</a></li>
+                <li><a href="/stats" class="nav-link">Dashboard</a></li>
+                <li><a href="/admin/login" class="nav-link admin-link">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="highlight">Aapki Samasya</span>,<br>
+                <span class="glow">Seedha Sarkaar Tak</span>
+            </h1>
+            <p class="hero-subtitle">Your concerns, Straight to the government</p>
+            <p class="hero-description">
+                Report neighborhood problems directly to authorities. Track solutions in real-time. 
+                Be the voice of change in your community.
+            </p>
+            <a href="/report" class="btn btn-primary btn-large">
+                <i class="fas fa-plus-circle"></i> Report a Problem Now
+            </a>
+        </div>
+        <div class="hero-illustration">
+            <div class="floating-shape shape1"></div>
+            <div class="floating-shape shape2"></div>
+            <div class="floating-shape shape3"></div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-number" data-target="{{ total_reports }}">0</div>
+                <div class="stat-label">Total Issues Reported</div>
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="{{ resolved_reports }}">0</div>
+                <div class="stat-label">Successfully Resolved</div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" data-target="{{ pending_reports }}">0</div>
+                <div class="stat-label">Currently Pending</div>
+                <div class="stat-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works">
+        <h2>How It Works</h2>
+        <div class="steps-container">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <i class="fas fa-pen-fancy"></i>
+                </div>
+                <h3>Report</h3>
+                <p>Fill a simple form describing the problem with a photo (optional). Get a unique Report ID instantly.</p>
+            </div>
+            <div class="step-connector">→</div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Review</h3>
+                <p>Government officials review your report. Track its status from Pending to In Review.</p>
+            </div>
+            <div class="step-connector">→</div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-icon">
+                    <i class="fas fa-thumbs-up"></i>
+                </div>
+                <h3>Resolve</h3>
+                <p>Get official responses and updates. See when your issue is resolved with proof.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Preview -->
+    <section class="categories-section">
+        <h2>Report Categories</h2>
+        <div class="categories-grid">
+            <div class="category-item">
+                <i class="fas fa-road"></i>
+                <span>Road Damage</span>
+            </div>
+            <div class="category-item">
+                <i class="fas fa-lightbulb"></i>
+                <span>Streetlight</span>
+            </div>
+            <div class="category-item">
+                <i class="fas fa-droplet"></i>
+                <span>Water Supply</span>
+            </div>
+            <div class="category-item">
+                <i class="fas fa-trash"></i>
+                <span>Garbage</span>
+            </div>
+            <div class="category-item">
+                <i class="fas fa-water"></i>
+                <span>Drainage</span>
+            </div>
+            <div class="category-item">
+                <i class="fas fa-ellipsis-h"></i>
+                <span>Other</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan. Making communities better, one report at a time.</p>
+            <p>Your voice matters. Your concerns matter. Report now.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Animate counters
+        const animateCounters = () => {
+            const cards = document.querySelectorAll('.stat-number');
+            cards.forEach(card => {
+                const target = parseInt(card.getAttribute('data-target'));
+                let current = 0;
+                const increment = target / 50;
+                
+                const counter = setInterval(() => {
+                    if (current < target) {
+                        current += increment;
+                        card.textContent = Math.floor(current);
+                    } else {
+                        card.textContent = target;
+                        clearInterval(counter);
+                    }
+                }, 30);
+            });
+        };
+
+        // Trigger animation on page load
+        window.addEventListener('load', animateCounters);
+    </script>
+</body>
+</html>

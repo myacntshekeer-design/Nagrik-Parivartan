@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Nagrik Parivartan</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Nagrik Parivartan</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="nav-link">Home</a></li>
+                <li><a href="/report" class="nav-link">Report Problem</a></li>
+                <li><a href="/track" class="nav-link">Track Report</a></li>
+                <li><a href="/reports" class="nav-link">All Reports</a></li>
+                <li><a href="/stats" class="nav-link active">Dashboard</a></li>
+                <li><a href="/admin/login" class="nav-link admin-link">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="dashboard-section">
+        <div class="dashboard-container">
+            <h1>Dashboard & Statistics</h1>
+            <p class="dashboard-subtitle">Real-time community problem tracking</p>
+
+            <!-- Stats Cards -->
+            <div class="stats-cards">
+                <div class="stat-card-large">
+                    <div class="stat-card-icon total">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Total Reports</p>
+                        <h2 id="totalReports">0</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card-large">
+                    <div class="stat-card-icon pending">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Pending</p>
+                        <h2 id="pendingReports">0</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card-large">
+                    <div class="stat-card-icon in-review">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">In Review</p>
+                        <h2 id="inReviewReports">0</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card-large">
+                    <div class="stat-card-icon resolved">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-card-content">
+                        <p class="stat-card-label">Resolved</p>
+                        <h2 id="resolvedReports">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <!-- Category Chart -->
+                <div class="chart-card">
+                    <h3>Reports by Category</h3>
+                    <canvas id="categoryChart"></canvas>
+                </div>
+
+                <!-- Status Chart -->
+                <div class="chart-card">
+                    <h3>Status Distribution</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="recent-activity">
+                <h3>Recent Activity (Last 5 Reports)</h3>
+                <div id="activityFeed" class="activity-feed">
+                    <!-- Recent reports will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Loading dashboard...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2024 Nagrik Parivartan. Making communities better, one report at a time.</p>
+        </div>
+    </footer>
+
+    <script>
+        let categoryChart = null;
+        let statusChart = null;
+
+        async function loadStats() {
+            const loadingState = document.getElementById('loadingState');
+            loadingState.style.display = 'flex';
+
+            try {
+                const response = await fetch('/api/get-stats');
+                const data = await response.json();
+
+                if (data.success) {
+                    displayStats(data.data);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            } finally {
+                loadingState.style.display = 'none';
+            }
+        }
+
+        function displayStats(stats) {
+            // Update stat cards
+            document.getElementById('totalReports').textContent = stats.total;
+            document.getElementById('pendingReports').textContent = stats.pending;
+            document.getElementById('inReviewReports').textContent = stats.in_review;
+            document.getElementById('resolvedReports').textContent = stats.resolved;
+
+            // Draw charts
+            drawCategoryChart(stats.category_stats);
+            drawStatusChart(stats);
+
+            // Display recent activity
+            displayRecentActivity(stats.recent);
+        }
+
+        function drawCategoryChart(categoryData) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (categoryChart) {
+                categoryChart.destroy();
+            }
+
+            const labels = Object.keys(categoryData);
+            const data = Object.values(categoryData);
+            const colors = [
+                '#FF6B6B',
+                '#4ECDC4',
+                '#45B7D1',
+                '#FFA07A',
+                '#98D8C8',
+                '#F7DC6F'
+            ];
+
+            categoryChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Number of Reports',
+                        data: data,
+                        backgroundColor: colors,
+                        borderColor: colors,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function drawStatusChart(stats) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            
+            // Destroy previous chart if exists
+            if (statusChart) {
+                statusChart.destroy();
+            }
+
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pending', 'In Review', 'Resolved'],
+                    datasets: [{
+                        data: [stats.pending, stats.in_review, stats.resolved],
+                        backgroundColor: [
+                            '#FFD93D',
+                            '#6BCB77',
+                            '#4D96FF'
+                        ],
+                        borderColor: ['#fff'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'Road Damage': '🚧',
+                'Streetlight': '💡',
+                'Water Supply': '🚰',
+                'Garbage': '🗑️',
+                'Drainage': '🌊',
+                'Other': '🌳'
+            };
+            return icons[category] || '📍';
+        }
+
+        function getStatusIcon(status) {
+            const icons = {
+                'Pending': '🟡',
+                'In Review': '🔵',
+                'Resolved': '🟢'
+            };
+            return icons[status] || '⚪';
+        }
+
+        function displayRecentActivity(reports) {
+            const feed = document.getElementById('activityFeed');
+            feed.innerHTML = '';
+
+            if (reports.length === 0) {
+                feed.innerHTML = '<p class="no-activity">No reports yet</p>';
+                return;
+            }
+
+            reports.forEach(report => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.innerHTML = `
+                    <div class="activity-icon">
+                        ${getStatusIcon(report.status)}
+                    </div>
+                    <div class="activity-content">
+                        <h4>${report.title}</h4>
+                        <p>${getCategoryIcon(report.category)} ${report.category} • ${report.location}</p>
+                        <small>${report.report_id} • ${new Date(report.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <div class="activity-status">
+                        <span class="status-badge status-${report.status.toLowerCase().replace(' ', '-')}">
+                            ${report.status}
+                        </span>
+                    </div>
+                `;
+                feed.appendChild(activityItem);
+            });
+        }
+
+        // Load stats on page load
+        loadStats();
+
+        // Refresh every 30 seconds
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>
